@@ -15,6 +15,8 @@ import com.example.app.data.annotation.AnnotationWithAttachments
 import com.example.app.data.annotation.Attachment
 import com.example.app.data.annotation.AttachmentType
 import com.example.app.data.annotation.PendingAttachment
+import com.example.app.data.crossref.CrossReference
+import com.example.app.data.crossref.CrossReferenceRepository
 import com.example.app.data.model.Chapter
 import com.example.app.ui.UiState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -31,6 +33,7 @@ import kotlinx.coroutines.launch
 class VerseViewModel(
     private val bibleRepository: BibleRepository,
     private val annotationRepository: AnnotationRepository,
+    private val crossReferenceRepository: CrossReferenceRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -44,6 +47,10 @@ class VerseViewModel(
         .getAnnotatedVersesInChapter(bookId, chapterNumber)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
+    val crossRefVerses: StateFlow<Set<Int>> = crossReferenceRepository
+        .getVersesWithCrossRefsInChapter(bookId, chapterNumber)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+
     private val _selectedVerse = MutableStateFlow<Int?>(null)
     val selectedVerse: StateFlow<Int?> = _selectedVerse.asStateFlow()
 
@@ -52,6 +59,14 @@ class VerseViewModel(
         .flatMapLatest { verseNum ->
             if (verseNum == null) flowOf(emptyList())
             else annotationRepository.getAnnotationWithAttachments(bookId, chapterNumber, verseNum)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val crossReferences: StateFlow<List<CrossReference>> = _selectedVerse
+        .flatMapLatest { verseNum ->
+            if (verseNum == null) flowOf(emptyList())
+            else crossReferenceRepository.getReferencesFor(bookId, chapterNumber, verseNum)
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -116,11 +131,19 @@ class VerseViewModel(
         viewModelScope.launch { annotationRepository.deleteAttachment(attachment) }
     }
 
+    suspend fun getVerseText(bookId: Int, chapter: Int, verse: Int): String? =
+        bibleRepository.getChapter(bookId, chapter)?.verses?.find { it.number == verse }?.text
+
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = checkNotNull(this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]) as App
-                VerseViewModel(app.repository, app.annotationRepository, createSavedStateHandle())
+                VerseViewModel(
+                    app.repository,
+                    app.annotationRepository,
+                    app.crossReferenceRepository,
+                    createSavedStateHandle()
+                )
             }
         }
     }

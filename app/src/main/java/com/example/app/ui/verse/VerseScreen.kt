@@ -44,16 +44,18 @@ import com.example.app.ui.UiState
 fun VerseScreen(
     viewModel: VerseViewModel,
     verseAnchor: Int? = null,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onNavigateToVerse: (bookId: Int, chapter: Int, verse: Int) -> Unit = { _, _, _ -> }
 ) {
     val state by viewModel.uiState.collectAsState()
     val annotatedVerses by viewModel.annotatedVerses.collectAsState()
+    val crossRefVerses by viewModel.crossRefVerses.collectAsState()
     val selectedVerse by viewModel.selectedVerse.collectAsState()
     val selectedVerseAnnotations by viewModel.selectedVerseAnnotations.collectAsState()
+    val crossReferences by viewModel.crossReferences.collectAsState()
     val pendingAttachments by viewModel.pendingAttachments.collectAsState()
     val listState = rememberLazyListState()
 
-    // Auto-scroll to anchor verse once data is loaded
     LaunchedEffect(verseAnchor, state) {
         if (verseAnchor != null && state is UiState.Success) {
             val verses = (state as UiState.Success).data.second.verses
@@ -103,6 +105,7 @@ fun VerseScreen(
                         VerseItem(
                             verse = verse,
                             hasAnnotation = verse.number in annotatedVerses,
+                            hasCrossRef = verse.number in crossRefVerses,
                             onTap = { viewModel.selectVerse(verse.number) }
                         )
                     }
@@ -114,6 +117,7 @@ fun VerseScreen(
                         verseRef = verseRef,
                         annotationsWithAttachments = selectedVerseAnnotations,
                         pendingAttachments = pendingAttachments,
+                        crossReferences = crossReferences,
                         onDismiss = { viewModel.dismissBottomSheet() },
                         onSave = { content, existing ->
                             viewModel.saveAnnotation(selectedVerse!!, content, existing)
@@ -122,7 +126,14 @@ fun VerseScreen(
                         onDeleteAttachment = { viewModel.deleteAttachment(it) },
                         onDeletePending = { viewModel.removePendingAttachment(it) },
                         onAddLink = { name, url -> viewModel.addPendingLink(name, url) },
-                        onAddPdf = { name, path -> viewModel.addPendingPdf(name, path) }
+                        onAddPdf = { name, path -> viewModel.addPendingPdf(name, path) },
+                        onCrossRefClick = { bookId, chap, verse ->
+                            viewModel.dismissBottomSheet()
+                            onNavigateToVerse(bookId, chap, verse)
+                        },
+                        getVerseText = { bookId, chap, verse ->
+                            viewModel.getVerseText(bookId, chap, verse)
+                        }
                     )
                 }
             }
@@ -134,6 +145,7 @@ fun VerseScreen(
 private fun VerseItem(
     verse: Verse,
     hasAnnotation: Boolean,
+    hasCrossRef: Boolean,
     onTap: () -> Unit
 ) {
     androidx.compose.foundation.layout.Column(
@@ -153,7 +165,19 @@ private fun VerseItem(
                         else MaterialTheme.colorScheme.surface
                     )
             )
-            Spacer(Modifier.width(8.dp))
+            if (hasCrossRef) {
+                Spacer(Modifier.width(3.dp))
+                Box(
+                    modifier = Modifier
+                        .padding(top = 6.dp)
+                        .size(6.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.tertiary)
+                )
+                Spacer(Modifier.width(5.dp))
+            } else {
+                Spacer(Modifier.width(8.dp))
+            }
             Text(
                 text = "${verse.number}",
                 fontSize = 11.sp,

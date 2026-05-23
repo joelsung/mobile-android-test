@@ -85,7 +85,10 @@ fun BibleNavGraph(navController: NavHostController) {
             VerseScreen(
                 viewModel = vm,
                 verseAnchor = verseAnchor,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onNavigateToVerse = { bookId, chapter, verse ->
+                    navController.navigate(Screen.Verse.createRoute(bookId, chapter, verse))
+                }
             )
         }
     }
