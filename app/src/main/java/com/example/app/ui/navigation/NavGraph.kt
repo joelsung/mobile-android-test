@@ -7,24 +7,41 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.app.data.model.Testament
 import com.example.app.ui.booklist.BookListScreen
 import com.example.app.ui.booklist.BookListViewModel
 import com.example.app.ui.chapterlist.ChapterListScreen
 import com.example.app.ui.chapterlist.ChapterListViewModel
+import com.example.app.ui.testament.TestamentSelectionScreen
 import com.example.app.ui.verse.VerseScreen
 import com.example.app.ui.verse.VerseViewModel
 
 @Composable
 fun BibleNavGraph(navController: NavHostController) {
-    NavHost(navController = navController, startDestination = Screen.BookList.route) {
+    NavHost(navController = navController, startDestination = Screen.TestamentSelection.route) {
 
-        composable(Screen.BookList.route) {
+        composable(Screen.TestamentSelection.route) {
+            TestamentSelectionScreen(
+                onTestamentClick = { testament ->
+                    navController.navigate(Screen.BookList.createRoute(testament))
+                }
+            )
+        }
+
+        composable(
+            route = Screen.BookList.route,
+            arguments = listOf(navArgument("testament") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val testamentName = backStackEntry.arguments?.getString("testament") ?: Testament.OLD.name
+            val testament = Testament.valueOf(testamentName)
             val vm: BookListViewModel = viewModel(factory = BookListViewModel.Factory)
             BookListScreen(
                 viewModel = vm,
+                testament = testament,
                 onBookClick = { bookId ->
                     navController.navigate(Screen.ChapterList.createRoute(bookId))
-                }
+                },
+                onBack = { navController.popBackStack() }
             )
         }
 

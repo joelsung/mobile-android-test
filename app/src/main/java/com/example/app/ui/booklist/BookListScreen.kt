@@ -8,9 +8,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -25,20 +29,29 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.app.data.model.Book
+import com.example.app.data.model.Testament
 import com.example.app.ui.UiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookListScreen(
     viewModel: BookListViewModel,
-    onBookClick: (Int) -> Unit
+    testament: Testament,
+    onBookClick: (Int) -> Unit,
+    onBack: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
+    val title = if (testament == Testament.OLD) "구약" else "신약"
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("성경") },
+                title = { Text(title) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로")
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -57,43 +70,17 @@ fun BookListScreen(
             ) { Text(s.message) }
 
             is UiState.Success -> {
-                val oldTestament = s.data.filter { it.id <= 39 }
-                val newTestament = s.data.filter { it.id > 39 }
-
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = padding
                 ) {
-                    item {
-                        SectionHeader("구약성경 (39권)")
-                    }
-                    items(oldTestament, key = { it.id }) { book ->
-                        BookItem(book = book, onClick = { onBookClick(book.id) })
-                    }
-                    item {
-                        SectionHeader("신약성경 (27권)")
-                    }
-                    items(newTestament, key = { it.id }) { book ->
+                    items(s.data, key = { it.id }) { book ->
                         BookItem(book = book, onClick = { onBookClick(book.id) })
                     }
                 }
             }
         }
     }
-}
-
-@Composable
-private fun SectionHeader(title: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.primary,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    )
-    HorizontalDivider()
 }
 
 @Composable
