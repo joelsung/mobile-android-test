@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -38,7 +39,8 @@ fun BookListScreen(
     viewModel: BookListViewModel,
     testament: Testament,
     onBookClick: (Int) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onSearchClick: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
     val title = if (testament == Testament.OLD) "구약" else "신약"
@@ -52,6 +54,11 @@ fun BookListScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로")
                     }
                 },
+                actions = {
+                    IconButton(onClick = onSearchClick) {
+                        Icon(Icons.Default.Search, contentDescription = "검색")
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -60,23 +67,19 @@ fun BookListScreen(
     ) { padding ->
         when (val s = state) {
             is UiState.Loading -> Box(
-                Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
+                Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center
             ) { CircularProgressIndicator() }
 
             is UiState.Error -> Box(
-                Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
+                Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center
             ) { Text(s.message) }
 
-            is UiState.Success -> {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = padding
-                ) {
-                    items(s.data, key = { it.id }) { book ->
-                        BookItem(book = book, onClick = { onBookClick(book.id) })
-                    }
+            is UiState.Success -> LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = padding
+            ) {
+                items(s.data, key = { it.id }) { book ->
+                    BookItem(book = book, onClick = { onBookClick(book.id) })
                 }
             }
         }
@@ -91,17 +94,8 @@ private fun BookItem(book: Book, onClick: () -> Unit) {
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
-        Text(
-            text = book.nameKor,
-            fontSize = 17.sp,
-            lineHeight = 24.sp,
-            fontWeight = FontWeight.Medium
-        )
-        Text(
-            text = book.nameEng,
-            fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Text(text = book.nameKor, fontSize = 17.sp, lineHeight = 24.sp, fontWeight = FontWeight.Medium)
+        Text(text = book.nameEng, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
     HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
 }

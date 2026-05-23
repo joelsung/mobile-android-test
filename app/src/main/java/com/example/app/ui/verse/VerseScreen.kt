@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -26,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -41,6 +43,7 @@ import com.example.app.ui.UiState
 @Composable
 fun VerseScreen(
     viewModel: VerseViewModel,
+    verseAnchor: Int? = null,
     onBack: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -48,6 +51,16 @@ fun VerseScreen(
     val selectedVerse by viewModel.selectedVerse.collectAsState()
     val selectedVerseAnnotations by viewModel.selectedVerseAnnotations.collectAsState()
     val pendingAttachments by viewModel.pendingAttachments.collectAsState()
+    val listState = rememberLazyListState()
+
+    // Auto-scroll to anchor verse once data is loaded
+    LaunchedEffect(verseAnchor, state) {
+        if (verseAnchor != null && state is UiState.Success) {
+            val verses = (state as UiState.Success).data.second.verses
+            val index = verses.indexOfFirst { it.number == verseAnchor }
+            if (index >= 0) listState.animateScrollToItem(index)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -72,18 +85,17 @@ fun VerseScreen(
     ) { padding ->
         when (val s = state) {
             is UiState.Loading -> Box(
-                Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
+                Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center
             ) { CircularProgressIndicator() }
 
             is UiState.Error -> Box(
-                Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
+                Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center
             ) { Text(s.message) }
 
             is UiState.Success -> {
                 val (bookName, chapter) = s.data
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = padding
                 ) {
@@ -125,14 +137,10 @@ private fun VerseItem(
     onTap: () -> Unit
 ) {
     androidx.compose.foundation.layout.Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onTap)
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onTap)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.Top
         ) {
             Box(

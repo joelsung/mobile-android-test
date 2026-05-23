@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -37,7 +38,8 @@ import com.example.app.ui.UiState
 fun ChapterListScreen(
     viewModel: ChapterListViewModel,
     onChapterClick: (bookId: Int, chapterNumber: Int) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onSearchClick: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -54,6 +56,11 @@ fun ChapterListScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로")
                     }
                 },
+                actions = {
+                    IconButton(onClick = onSearchClick) {
+                        Icon(Icons.Default.Search, contentDescription = "검색")
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -62,32 +69,26 @@ fun ChapterListScreen(
     ) { padding ->
         when (val s = state) {
             is UiState.Loading -> Box(
-                Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
+                Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center
             ) { CircularProgressIndicator() }
 
             is UiState.Error -> Box(
-                Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
+                Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center
             ) { Text(s.message) }
 
             is UiState.Success -> {
                 val book = s.data
                 if (book.chapters.isEmpty()) {
                     Box(
-                        Modifier.fillMaxSize().padding(padding),
-                        contentAlignment = Alignment.Center
+                        Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center
                     ) { Text("아직 준비 중인 본문입니다", color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 } else {
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(4),
-                        modifier = Modifier.fillMaxSize().padding(padding).padding(8.dp),
+                        modifier = Modifier.fillMaxSize().padding(padding).padding(8.dp)
                     ) {
                         items(book.chapters, key = { it.number }) { chapter ->
-                            ChapterCard(
-                                chapter = chapter,
-                                onClick = { onChapterClick(book.id, chapter.number) }
-                            )
+                            ChapterCard(chapter = chapter, onClick = { onChapterClick(book.id, chapter.number) })
                         }
                     }
                 }
@@ -100,18 +101,12 @@ fun ChapterListScreen(
 private fun ChapterCard(chapter: Chapter, onClick: () -> Unit) {
     Card(
         onClick = onClick,
-        modifier = Modifier
-            .padding(4.dp)
-            .aspectRatio(1f),
+        modifier = Modifier.padding(4.dp).aspectRatio(1f),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(
-                text = "${chapter.number}",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
-            )
+            Text(text = "${chapter.number}", fontSize = 16.sp, fontWeight = FontWeight.Medium)
         }
     }
 }

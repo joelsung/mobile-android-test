@@ -12,6 +12,8 @@ import com.example.app.ui.booklist.BookListScreen
 import com.example.app.ui.booklist.BookListViewModel
 import com.example.app.ui.chapterlist.ChapterListScreen
 import com.example.app.ui.chapterlist.ChapterListViewModel
+import com.example.app.ui.search.SearchScreen
+import com.example.app.ui.search.SearchViewModel
 import com.example.app.ui.testament.TestamentSelectionScreen
 import com.example.app.ui.verse.VerseScreen
 import com.example.app.ui.verse.VerseViewModel
@@ -22,9 +24,19 @@ fun BibleNavGraph(navController: NavHostController) {
 
         composable(Screen.TestamentSelection.route) {
             TestamentSelectionScreen(
-                onTestamentClick = { testament ->
-                    navController.navigate(Screen.BookList.createRoute(testament))
-                }
+                onTestamentClick = { navController.navigate(Screen.BookList.createRoute(it)) },
+                onSearchClick = { navController.navigate(Screen.Search.route) }
+            )
+        }
+
+        composable(Screen.Search.route) {
+            val vm: SearchViewModel = viewModel(factory = SearchViewModel.Factory)
+            SearchScreen(
+                viewModel = vm,
+                onNavigateToVerse = { bookId, chapter, verse ->
+                    navController.navigate(Screen.Verse.createRoute(bookId, chapter, verse))
+                },
+                onBack = { navController.popBackStack() }
             )
         }
 
@@ -32,16 +44,16 @@ fun BibleNavGraph(navController: NavHostController) {
             route = Screen.BookList.route,
             arguments = listOf(navArgument("testament") { type = NavType.StringType })
         ) { backStackEntry ->
-            val testamentName = backStackEntry.arguments?.getString("testament") ?: Testament.OLD.name
-            val testament = Testament.valueOf(testamentName)
+            val testament = Testament.valueOf(
+                backStackEntry.arguments?.getString("testament") ?: Testament.OLD.name
+            )
             val vm: BookListViewModel = viewModel(factory = BookListViewModel.Factory)
             BookListScreen(
                 viewModel = vm,
                 testament = testament,
-                onBookClick = { bookId ->
-                    navController.navigate(Screen.ChapterList.createRoute(bookId))
-                },
-                onBack = { navController.popBackStack() }
+                onBookClick = { navController.navigate(Screen.ChapterList.createRoute(it)) },
+                onBack = { navController.popBackStack() },
+                onSearchClick = { navController.navigate(Screen.Search.route) }
             )
         }
 
@@ -55,7 +67,8 @@ fun BibleNavGraph(navController: NavHostController) {
                 onChapterClick = { bookId, chapterNumber ->
                     navController.navigate(Screen.Verse.createRoute(bookId, chapterNumber))
                 },
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onSearchClick = { navController.navigate(Screen.Search.route) }
             )
         }
 
@@ -63,12 +76,15 @@ fun BibleNavGraph(navController: NavHostController) {
             route = Screen.Verse.route,
             arguments = listOf(
                 navArgument("bookId") { type = NavType.IntType },
-                navArgument("chapterNumber") { type = NavType.IntType }
+                navArgument("chapterNumber") { type = NavType.IntType },
+                navArgument("verseAnchor") { type = NavType.IntType; defaultValue = -1 }
             )
-        ) {
+        ) { backStackEntry ->
+            val verseAnchor = backStackEntry.arguments?.getInt("verseAnchor")?.takeIf { it > 0 }
             val vm: VerseViewModel = viewModel(factory = VerseViewModel.Factory)
             VerseScreen(
                 viewModel = vm,
+                verseAnchor = verseAnchor,
                 onBack = { navController.popBackStack() }
             )
         }
