@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Left page (open toward spine) -->
+    <path
+        android:pathData="M 52,30 L 22,30 L 22,78 L 52,78"
+        android:fillColor="#00000000"
+        android:strokeColor="#F8FAFC"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+
+    <!-- Right page (open toward spine) -->
+    <path
+        android:pathData="M 56,30 L 86,30 L 86,78 L 56,78"
+        android:fillColor="#00000000"
+        android:strokeColor="#F8FAFC"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+
+    <!-- Center spine -->
+    <path
+        android:pathData="M 54,27 L 54,81"
+        android:fillColor="#00000000"
+        android:strokeColor="#F8FAFC"
+        android:strokeWidth="4"
+        android:strokeLineCap="round" />
+
+    <!-- Left page: accent lines (text feel) -->
+    <path
+        android:pathData="M 28,42 L 48,42 M 28,51 L 48,51 M 28,60 L 42,60"
+        android:fillColor="#00000000"
+        android:strokeColor="#F8FAFC"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+
+    <!-- Right page: accent lines (text feel) -->
+    <path
+        android:pathData="M 60,42 L 80,42 M 60,51 L 80,51 M 60,60 L 74,60"
+        android:fillColor="#00000000"
+        android:strokeColor="#F8FAFC"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+
+</vector>
