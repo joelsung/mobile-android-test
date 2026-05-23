@@ -3,7 +3,6 @@ package com.example.app.ui.verse
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,7 +34,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.app.data.annotation.Annotation
 import com.example.app.data.model.Verse
 import com.example.app.ui.UiState
 
@@ -49,6 +47,7 @@ fun VerseScreen(
     val annotatedVerses by viewModel.annotatedVerses.collectAsState()
     val selectedVerse by viewModel.selectedVerse.collectAsState()
     val selectedVerseAnnotations by viewModel.selectedVerseAnnotations.collectAsState()
+    val pendingAttachments by viewModel.pendingAttachments.collectAsState()
 
     Scaffold(
         topBar = {
@@ -101,12 +100,17 @@ fun VerseScreen(
                     val verseRef = "$bookName ${chapter.number}:$selectedVerse"
                     AnnotationBottomSheet(
                         verseRef = verseRef,
-                        annotations = selectedVerseAnnotations,
+                        annotationsWithAttachments = selectedVerseAnnotations,
+                        pendingAttachments = pendingAttachments,
                         onDismiss = { viewModel.dismissBottomSheet() },
                         onSave = { content, existing ->
                             viewModel.saveAnnotation(selectedVerse!!, content, existing)
                         },
-                        onDelete = { viewModel.deleteAnnotation(it) }
+                        onDeleteAnnotation = { viewModel.deleteAnnotation(it) },
+                        onDeleteAttachment = { viewModel.deleteAttachment(it) },
+                        onDeletePending = { viewModel.removePendingAttachment(it) },
+                        onAddLink = { name, url -> viewModel.addPendingLink(name, url) },
+                        onAddPdf = { name, path -> viewModel.addPendingPdf(name, path) }
                     )
                 }
             }
@@ -120,7 +124,7 @@ private fun VerseItem(
     hasAnnotation: Boolean,
     onTap: () -> Unit
 ) {
-    Column(
+    androidx.compose.foundation.layout.Column(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onTap)
@@ -131,7 +135,6 @@ private fun VerseItem(
                 .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.Top
         ) {
-            // 주석 마커 (파란 점)
             Box(
                 modifier = Modifier
                     .padding(top = 6.dp)
@@ -143,8 +146,6 @@ private fun VerseItem(
                     )
             )
             Spacer(Modifier.width(8.dp))
-
-            // 절번호 (superscript-like: 작고 위쪽 정렬)
             Text(
                 text = "${verse.number}",
                 fontSize = 11.sp,
@@ -153,8 +154,6 @@ private fun VerseItem(
                 modifier = Modifier.padding(top = 1.dp, end = 6.dp),
                 lineHeight = 14.sp
             )
-
-            // 본문
             Text(
                 text = verse.text,
                 fontSize = 17.sp,

@@ -8,6 +8,6 @@ import com.example.app.data.annotation.BibleAnnotationDatabase
 class App : Application() {
     val repository by lazy { BibleRepository(this) }
     val annotationRepository by lazy {
-        AnnotationRepository(BibleAnnotationDatabase.getInstance(this).annotationDao())
+        AnnotationRepository(BibleAnnotationDatabase.getInstance(this))
     }
 }

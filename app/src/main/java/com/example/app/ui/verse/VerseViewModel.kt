@@ -11,6 +11,10 @@ import com.example.app.App
 import com.example.app.data.BibleRepository
 import com.example.app.data.annotation.Annotation
 import com.example.app.data.annotation.AnnotationRepository
+import com.example.app.data.annotation.AnnotationWithAttachments
+import com.example.app.data.annotation.Attachment
+import com.example.app.data.annotation.AttachmentType
+import com.example.app.data.annotation.PendingAttachment
 import com.example.app.data.model.Chapter
 import com.example.app.ui.UiState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -21,6 +25,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class VerseViewModel(
@@ -43,12 +48,15 @@ class VerseViewModel(
     val selectedVerse: StateFlow<Int?> = _selectedVerse.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val selectedVerseAnnotations: StateFlow<List<Annotation>> = _selectedVerse
+    val selectedVerseAnnotations: StateFlow<List<AnnotationWithAttachments>> = _selectedVerse
         .flatMapLatest { verseNum ->
             if (verseNum == null) flowOf(emptyList())
-            else annotationRepository.getByVerse(bookId, chapterNumber, verseNum)
+            else annotationRepository.getAnnotationWithAttachments(bookId, chapterNumber, verseNum)
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    private val _pendingAttachments = MutableStateFlow<List<PendingAttachment>>(emptyList())
+    val pendingAttachments: StateFlow<List<PendingAttachment>> = _pendingAttachments.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -66,27 +74,46 @@ class VerseViewModel(
 
     fun selectVerse(verseNum: Int) { _selectedVerse.value = verseNum }
 
-    fun dismissBottomSheet() { _selectedVerse.value = null }
+    fun dismissBottomSheet() {
+        _selectedVerse.value = null
+        _pendingAttachments.value = emptyList()
+    }
 
-    fun saveAnnotation(verseNum: Int, content: String, existing: Annotation?) {
+    fun addPendingLink(displayName: String, url: String) {
+        _pendingAttachments.update { it + PendingAttachment(AttachmentType.LINK, displayName, url) }
+    }
+
+    fun addPendingPdf(displayName: String, internalPath: String) {
+        _pendingAttachments.update { it + PendingAttachment(AttachmentType.PDF, displayName, internalPath) }
+    }
+
+    fun removePendingAttachment(index: Int) {
+        _pendingAttachments.update { list -> list.filterIndexed { i, _ -> i != index } }
+    }
+
+    fun saveAnnotation(verseNum: Int, content: String, existing: AnnotationWithAttachments?) {
         viewModelScope.launch {
             val now = System.currentTimeMillis()
-            annotationRepository.upsert(
-                existing?.copy(content = content, updatedAt = now)
-                    ?: Annotation(
-                        bookId = bookId,
-                        chapter = chapterNumber,
-                        verse = verseNum,
-                        content = content,
-                        createdAt = now,
-                        updatedAt = now
-                    )
-            )
+            val annotation = existing?.annotation?.copy(content = content, updatedAt = now)
+                ?: Annotation(
+                    bookId = bookId,
+                    chapter = chapterNumber,
+                    verse = verseNum,
+                    content = content,
+                    createdAt = now,
+                    updatedAt = now
+                )
+            annotationRepository.saveAnnotationWithAttachments(annotation, _pendingAttachments.value)
+            _pendingAttachments.value = emptyList()
         }
     }
 
     fun deleteAnnotation(id: Long) {
-        viewModelScope.launch { annotationRepository.deleteById(id) }
+        viewModelScope.launch { annotationRepository.deleteAnnotationById(id) }
+    }
+
+    fun deleteAttachment(attachment: Attachment) {
+        viewModelScope.launch { annotationRepository.deleteAttachment(attachment) }
     }
 
     companion object {
