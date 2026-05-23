@@ -1,7 +1,8 @@
 package com.example.app.ui.verse
 
+import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,6 +26,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,6 +40,7 @@ fun VerseScreen(
     onBack: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -78,7 +81,9 @@ fun VerseScreen(
                     contentPadding = padding
                 ) {
                     items(chapter.verses, key = { it.number }) { verse ->
-                        VerseItem(verse = verse)
+                        VerseItem(verse = verse, onTap = {
+                            Toast.makeText(context, "곧 주석 기능 추가됩니다", Toast.LENGTH_SHORT).show()
+                        })
                     }
                 }
             }
@@ -87,26 +92,26 @@ fun VerseScreen(
 }
 
 @Composable
-private fun VerseItem(verse: Verse) {
-    Column(
+private fun VerseItem(verse: Verse, onTap: () -> Unit) {
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .clickable(onClick = onTap)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.Top
     ) {
-        Row(verticalAlignment = Alignment.Top) {
-            Text(
-                text = "${verse.number}",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(top = 2.dp, end = 10.dp)
-            )
-            Text(
-                text = verse.text,
-                fontSize = 17.sp,
-                lineHeight = 28.sp
-            )
-        }
+        Text(
+            text = "${verse.number}",
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(top = 2.dp, end = 10.dp)
+        )
+        Text(
+            text = verse.text,
+            fontSize = 17.sp,
+            lineHeight = 28.sp
+        )
     }
     HorizontalDivider(modifier = Modifier.padding(start = 40.dp), thickness = 0.5.dp)
 }

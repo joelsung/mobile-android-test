@@ -80,7 +80,7 @@ fun ChapterListScreen(
                     ) { Text("아직 준비 중인 본문입니다", color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 } else {
                     LazyVerticalGrid(
-                        columns = GridCells.Fixed(5),
+                        columns = GridCells.Fixed(4),
                         modifier = Modifier.fillMaxSize().padding(padding).padding(8.dp),
                     ) {
                         items(book.chapters, key = { it.number }) { chapter ->
